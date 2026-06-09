@@ -1,7 +1,7 @@
 {
   "name": "التقويم الإسلامي",
   "short_name": "تقويم إسلامي",
-  "description": "التقويم الإسلامي اليومي من قناة صدقة جارية",
+  "description": "التقويم الإسلامي اليومي",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f0e8",
