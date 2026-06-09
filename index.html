@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a472a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>صدقة جارية</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 class="title">صدقة جارية</h1>
+      <p class="subtitle" id="hijri-header"></p>
+    </header>
+
+    <div class="refresh-bar">
+      <button id="refresh-btn" onclick="fetchPosts()">🔄 تحديث</button>
+      <span class="last-update" id="last-update"></span>
+    </div>
+
+    <div id="load-status" class="loading">جاري التحميل...</div>
+    <div id="posts-container" style="display:none"></div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
