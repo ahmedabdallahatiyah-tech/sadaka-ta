@@ -47,7 +47,45 @@ function escapeHtml(str) {
 
 let allPosts = [];
 let displayedIds = new Set();
-let lastUpdateId = 0;
+
+function savePosts() {
+  try {
+    const data = allPosts.map(p => ({
+      mid: p.message_id,
+      text: p.text,
+      caption: p.caption,
+      date: p.date,
+      photo: p.photo ? p.photo.map(x => ({ file_id: x.file_id, file_unique_id: x.file_unique_id })) : null
+    }));
+    localStorage.setItem('posts', JSON.stringify(data));
+  } catch(e) {}
+}
+
+const INITIAL_POSTS = [];
+
+function loadSavedPosts() {
+  try {
+    const raw = localStorage.getItem('posts');
+    if (raw) {
+      const data = JSON.parse(raw);
+      allPosts = data.map(d => ({
+        message_id: d.mid,
+        text: d.text,
+        caption: d.caption,
+        date: d.date,
+        photo: d.photo
+      }));
+      displayedIds = new Set(data.map(d => d.mid));
+      return true;
+    } else if (INITIAL_POSTS.length > 0) {
+      allPosts = INITIAL_POSTS;
+      displayedIds = new Set(INITIAL_POSTS.map(p => p.message_id));
+      savePosts();
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
 
 async function fetchPosts() {
   const container = document.getElementById('posts-container');
@@ -56,22 +94,22 @@ async function fetchPosts() {
   btn.textContent = 'جاري التحديث...';
 
   try {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId}&timeout=5`;
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=0&timeout=5`;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     if (!data.ok) throw new Error(data.description);
 
     for (const u of data.result) {
-      if (u.update_id > lastUpdateId) lastUpdateId = u.update_id;
       const p = u.channel_post;
       if (p && p.chat && p.chat.id.toString() === CHANNEL_ID && !displayedIds.has(p.message_id)) {
         displayedIds.add(p.message_id);
-        allPosts.push(p);
+        allPosts.push({ message_id: p.message_id, text: p.text, caption: p.caption, date: p.date, photo: p.photo ? p.photo.map(x => ({ file_id: x.file_id, file_unique_id: x.file_unique_id })) : null });
       }
     }
 
     allPosts.sort((a, b) => b.message_id - a.message_id);
+    savePosts();
 
     if (allPosts.length === 0) {
       container.innerHTML = '<div class="loading">📭 لا توجد منشورات بعد</div>';
@@ -80,7 +118,7 @@ async function fetchPosts() {
       for (const p of allPosts) {
         const caption = escapeHtml(p.caption || p.text || '');
         html += '<div class="post-card">';
-        if (p.photo && p.photo.length > 0) {
+        if (p.photo) {
           html += `<img class="post-image" src="" data-fid="${p.photo[p.photo.length - 1].file_id}" alt="صورة">`;
         }
         if (caption) {
@@ -107,12 +145,16 @@ async function fetchPosts() {
       `آخر تحديث: ${new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}`;
 
   } catch (e) {
-    status.innerHTML = '🔴 ' + e.message;
-    status.style.display = '';
+    if (allPosts.length === 0) {
+      status.innerHTML = '🔴 ' + e.message;
+      status.style.display = '';
+    }
   }
 
   btn.textContent = '🔄 تحديث';
 }
+
+loadSavedPosts();
 
 function timeAgo(unixtime) {
   const diff = Math.floor(Date.now() / 1000) - unixtime;
